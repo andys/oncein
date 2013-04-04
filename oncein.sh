@@ -10,8 +10,10 @@ if [ x$seconds == 'x'  ] || [ x$cmd == 'x' ] || [ ! -x $cmd ] ; then
     exit 3
 fi
 
+starttime=`/bin/date +"%s"`
 timestampfile="/var/lock/oncein_`basename $cmd`.lock"
 firstrun=0
+runcommand=1
 if [ ! -f $timestampfile ] ; then
     firstrun=1
 fi
@@ -21,11 +23,17 @@ exec 9>>$timestampfile
 flock 9
 {
     if [ ! "$firstrun" -eq "1" ] ; then
+    	timenow=`/bin/date +"%s"`
+    	filetime=`/usr/bin/stat -c "%Y" $timestampfile`
+    	
         # seconds since lockfile was last touched
-        age=$(( $(date +"%s") - $(stat -c "%Y" $timestampfile) ))
+        age=$(( $timenow - $filetime ))
 
-        # sleep if necessary to make up the correct number of seconds
-        if [ $age -lt $seconds ] ; then
+        if [ $filetime -gt $starttime ] ; then
+            # someone else ran the command since we started, so we don't have to
+            runcommand=0
+        elif [ $age -lt $seconds ] ; then
+            # sleep if necessary to make up the correct number of seconds
             sleep $(($seconds - $age))
         fi
     fi
@@ -37,5 +45,7 @@ flock 9
 } 9<&-
 exec 9<&-
 
-# run the requested command
-exec $cmd $@
+if [ $runcommand -eq "1" ] ; then
+    # run the requested command
+    exec $cmd $@
+fi
