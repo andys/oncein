@@ -36,10 +36,12 @@ flock 9
             # sleep if necessary to make up the correct number of seconds
             sleep $(($seconds - $age))
         fi
-    fi
 
-    # we're done sleeping. update the timestamp before releasing the lock
-    touch $timestampfile
+        if [ $runcommand -eq "1" ] ; then
+            # we're done sleeping. update the timestamp before releasing the lock
+           touch $timestampfile
+        fi
+    fi
 
 # release the lock      
 } 9<&-
