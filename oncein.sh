@@ -2,16 +2,14 @@
 
 seconds=$1
 shift
-cmd=`which $1`
-shift
 
-if [ x$seconds == 'x'  ] || [ x$cmd == 'x' ] || [ ! -x $cmd ] ; then
-    echo 'Usage: oncein <seconds> <command> [args..]'
+if [ x$seconds == 'x'  ] || [ x$1 == 'x' ] || [ ! -x $cmd ] ; then
+    echo 'Usage: oncein <seconds> <command>'
     exit 3
 fi
 
 starttime=`/bin/date +"%s"`
-timestampfile="/var/lock/oncein_`basename $cmd`.lock"
+timestampfile="/var/lock/oncein_`echo $@ | md5sum | cut -c1-32`.lock"
 firstrun=0
 runcommand=1
 if [ ! -f $timestampfile ] ; then
@@ -49,5 +47,5 @@ exec 9<&-
 
 if [ $runcommand -eq "1" ] ; then
     # run the requested command
-    exec $cmd $@
+    exec $@
 fi
